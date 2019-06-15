@@ -25,7 +25,7 @@ int main() {
     v.push_back(5);
     v.push_back(5);
 
-
+    v.resize(10);
 
     vector<int> a(v);
     std::cout << a[0] << std::endl;
@@ -39,5 +39,7 @@ int main() {
     cout << v.size() << " " << a.size() << endl;
     v= a;
     cout << endl;
+
+    v.clear();
     return 0;
 }
