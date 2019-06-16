@@ -51,217 +51,196 @@ private:
 
 public:
 
-    struct const_iterator {
-        const_iterator() = default;
+//    struct const_iterator : std::iterator<std::random_access_iterator_tag, T const> {
+//        const_iterator() = default;
+//
+//        ~const_iterator() = default;
+//
+//        const_iterator(const_iterator const &other) = default;
+//
+//        const_iterator &operator=(const_iterator const &other) = default;
+//
+//        const_iterator &operator++() {
+//            pointer++;
+//            return *this;
+//        }
+//
+//        const_iterator operator++(int) {
+//            const_iterator tmp(*this);
+//            ++(*this);
+//            return tmp;
+//        }
+//
+//        const_iterator &operator--() {
+//            pointer--;
+//            return *this;
+//        }
+//
+//        const_iterator operator--(int) {
+//            const_iterator tmp(*this);
+//            --(*this);
+//            return tmp;
+//        }
+//
+//        T const &operator*() const {
+//            return *pointer;
+//        }
+//
+//        T const *const operator->() const {
+//            return pointer;
+//        }
+//
+//        const_iterator &operator+=(size_t _size) {
+//            pointer += _size;
+//            return *this;
+//        }
+//
+//        const_iterator operator+(size_t _size) {
+//            const_iterator tmp(*this);
+//            tmp += _size;
+//            return tmp;
+//        }
+//
+//        const_iterator &operator-=(size_t _size) {
+//            pointer -= _size;
+//        }
+//
+//        const_iterator operator-(size_t _size) {
+//            const_iterator tmp(*this);
+//            tmp -= _size;
+//            return tmp;
+//        }
+//
+//        friend bool operator==(const_iterator const &a, const_iterator const &b) {
+//            return a.pointer == b.pointer;
+//        }
+//
+//        friend bool operator<(const_iterator const &a, const_iterator const &b) {
+//            return a.pointer < b.pointer;
+//        }
+//
+//        friend bool operator>(const_iterator const &a, const_iterator const &b) {
+//            return a.pointer > b.pointer;
+//        }
+//
+//        friend bool operator!=(const_iterator const &a, const_iterator const &b) {
+//            return a.pointer != b.pointer;
+//        }
+//
+//        friend bool operator>=(const_iterator const &a, const_iterator const &b) {
+//            return a.pointer >= b.pointer;
+//        }
+//
+//        friend bool operator<=(const_iterator const &a, const_iterator const &b) {
+//            return a.pointer <= b.pointer;
+//        }
+//
+//        explicit const_iterator(T const *p) {
+//            pointer = &(*p);
+//        }
+//
+//    private:
+//
+//        T const *pointer;
+//    };
 
-        ~const_iterator() = default;
+    template <typename U>
+    struct Iterator : std::iterator<std::random_access_iterator_tag, U> {
+        Iterator() = default;
 
-        const_iterator(const_iterator const &other) = default;
+        ~Iterator() = default;
 
-        const_iterator &operator=(const_iterator const &other) = default;
+        Iterator(Iterator<U> const &other) = default;
 
-        const_iterator &operator++() {
+        Iterator &operator=(Iterator const &other) = default;
+
+        Iterator &operator++() {
             pointer++;
             return *this;
         }
 
-        const_iterator operator++(int) {
-            const_iterator tmp(*this);
+        Iterator operator++(int) {
+            iterator tmp(*this);
             ++(*this);
             return tmp;
         }
 
-        const_iterator *operator--() {
+        Iterator &operator--() {
             pointer--;
             return *this;
         }
 
-        const_iterator operator--(int) {
-            const_iterator tmp(*this);
+        Iterator operator--(int) {
+            iterator tmp(*this);
             --(*this);
             return tmp;
         }
 
-        T const &operator*() {
+        U &operator*() {
             return *pointer;
         }
 
-        T const *const operator->() {
+        U *const operator->() {
             return pointer;
         }
 
-        const_iterator &operator+=(size_t _size) {
+        Iterator &operator+=(size_t _size) {
             pointer += _size;
             return *this;
         }
 
-        const_iterator operator+(size_t _size) {
-            const_iterator tmp(*this);
+        Iterator operator+(size_t _size) {
+            iterator tmp(*this);
             tmp += _size;
             return tmp;
         }
 
-        const_iterator &operator-=(size_t _size) {
+        Iterator &operator-=(size_t _size) {
             pointer -= _size;
+            return *this;
         }
 
-        const_iterator operator-(size_t _size) {
-            const_iterator tmp(*this);
+        Iterator operator-(size_t _size) {
+            iterator tmp(*this);
             tmp -= _size;
             return tmp;
         }
 
-        friend bool operator==(const_iterator const &a, const_iterator const &b) {
-            return a == b;
+        friend bool operator==(Iterator const &a, Iterator const &b) {
+            return a.pointer == b.pointer;
         }
 
-        friend bool operator<(const_iterator const &a, const_iterator const &b) {
-            return a < b;
+        friend bool operator<(Iterator const &a, Iterator const &b) {
+            return a.pointer < b.pointer;
         }
 
-        friend bool operator>(const_iterator const &a, const_iterator const &b) {
-            return a > b;
+        friend bool operator>(Iterator const &a, Iterator const &b) {
+            return a.pointer > b.pointer;
         }
 
-        friend bool operator!=(const_iterator const &a, const_iterator const &b) {
-            return a != b;
+        friend bool operator!=(Iterator const &a, Iterator const &b) {
+            return a.pointer != b.pointer;
         }
 
-        friend bool operator>=(const_iterator const &a, const_iterator const &b) {
-            return a >= b;
+        friend bool operator>=(Iterator const &a, Iterator const &b) {
+            return a.pointer >= b.pointer;
         }
 
-        friend bool operator<=(const_iterator const &a, const_iterator const &b) {
-            return a <= b;
+        friend bool operator<=(Iterator const &a, Iterator const &b) {
+            return a.pointer <= b.pointer;
         }
 
-    private:
-        explicit const_iterator(T *p) {
+        explicit Iterator(U *p) {
             pointer = &(*p);
         }
 
-        T *pointer;
-    };
-
-
-    struct iterator {
-        iterator() = default;
-
-        ~iterator() = default;
-
-        iterator(iterator const &other) = default;
-
-        iterator &operator=(iterator const &other) = default;
-
-        iterator &operator++() {
-            pointer++;
-            return *this;
-        }
-
-        iterator operator++(int) {
-            const_iterator tmp(*this);
-            ++(*this);
-            return tmp;
-        }
-
-        iterator *operator--() {
-            pointer--;
-            return *this;
-        }
-
-        iterator operator--(int) {
-            const_iterator tmp(*this);
-            --(*this);
-            return tmp;
-        }
-
-        T &operator*() {
-            return *pointer;
-        }
-
-        T *const operator->() {
-            return pointer;
-        }
-
-        iterator &operator+=(size_t _size) {
-            pointer += _size;
-            return *this;
-        }
-
-        iterator operator+(size_t _size) {
-            const_iterator tmp(*this);
-            tmp += _size;
-            return tmp;
-        }
-
-        iterator &operator-=(size_t _size) {
-            pointer -= _size;
-        }
-
-        iterator operator-(size_t _size) {
-            const_iterator tmp(*this);
-            tmp -= _size;
-            return tmp;
-        }
-
-        friend bool operator==(iterator const &a, iterator const &b) {
-            return a == b;
-        }
-
-        friend bool operator<(iterator const &a, iterator const &b) {
-            return a < b;
-        }
-
-        friend bool operator>(iterator const &a, iterator const &b) {
-            return a > b;
-        }
-
-        friend bool operator!=(iterator const &a, iterator const &b) {
-            return a != b;
-        }
-
-        friend bool operator>=(iterator const &a, iterator const &b) {
-            return a >= b;
-        }
-
-        friend bool operator<=(const_iterator const &a, const_iterator const &b) {
-            return a <= b;
-        }
-
     private:
-        explicit iterator(T *p) {
-            pointer = &(*p);
-        }
 
-        T *pointer;
+        U *pointer;
     };
 
-    typedef T value_type;
 
-    typedef iterator iterator;
-    typedef const_iterator const_iterator;
-    typedef std::reverse_iterator<iterator>
-            reverse_iterator;
-    typedef std::reverse_iterator<const_iterator>
-            const_reverse_iterator;
-
-
-    const_iterator begin() {
-        if (is_big()) const_iterator(any_obj.big->data);
-        else {
-            return const_iterator(&any_obj.small);
-        }
-    }
-
-    const_iterator end() {
-        if (is_big()) {
-            const_iterator(any_obj.big->data + size());
-        } else {
-            return const_iterator(&any_obj.small + 1);
-        }
-    }
-
-    ~vector() {
+    ~vector() noexcept {
         if (is_big()) {
             any_obj.big->ref_count--;
             if (any_obj.big->ref_count == 0) {
@@ -381,12 +360,14 @@ public:
                 set_empty(0);
                 delete tmp;
             } else {
+                T *tmp = new T(val);
                 make_uniq();
                 ensure_capacity();
-                new(any_obj.big->data + size()) T(val);
+                new(any_obj.big->data + size()) T(*tmp);
                 //any_obj.big->data[size()] = val;
                 any_obj.big->size++;
                 set_empty(0);
+                delete(tmp);
             }
         }
     }
@@ -467,7 +448,6 @@ public:
 
     T const &back() const {
         if (is_big()) {
-            make_uniq();
             return any_obj.big->data[size() - 1];
         }
         return any_obj.small;
@@ -492,9 +472,10 @@ public:
     void pop_back() {
         if (!is_big()) {
             set_empty(1);
-            // any_obj.small.~T();
+            any_obj.small.~T();
         } else {
             any_obj.big->size--;
+            any_obj.big->data[size()].~T();
             if (any_obj.big->size == 0) {
                 set_empty(1);
             }
@@ -522,6 +503,139 @@ public:
         }
         return any_obj.big->capacity;
 
+    }
+    typedef T value_type;
+
+    typedef Iterator<T> iterator;
+    typedef Iterator<T const> const_iterator;
+    typedef std::reverse_iterator<iterator>
+            reverse_iterator;
+    typedef std::reverse_iterator<const_iterator>
+            const_reverse_iterator;
+
+
+    const_iterator begin() const noexcept {
+        if (is_big()) {
+            return const_iterator(any_obj.big->data);
+        }
+        else {
+            return const_iterator(&any_obj.small);
+        }
+    }
+
+    const_iterator end() const noexcept {
+        if (is_big()) {
+            return const_iterator(any_obj.big->data + size());
+        } else {
+            return const_iterator(&any_obj.small + 1);
+        }
+    }
+
+    const_reverse_iterator rbegin() const noexcept {
+        return const_reverse_iterator(end());
+    }
+
+    const_reverse_iterator rend() const noexcept {
+        return const_reverse_iterator(begin());
+    }
+
+    reverse_iterator rbegin() noexcept {
+        return reverse_iterator(end());
+    }
+
+    reverse_iterator rend() noexcept {
+        return reverse_iterator(begin());
+    }
+
+    iterator begin() noexcept {
+        if (is_big()) return iterator(any_obj.big->data);
+        else {
+            return iterator(&any_obj.small);
+        }
+    }
+
+    iterator end() noexcept {
+        if (is_big()) {
+            return iterator(any_obj.big->data + size());
+        } else {
+            return iterator(&any_obj.small + 1);
+        }
+    }
+
+    friend bool operator==(vector const &a, vector const &b) {
+        if (a.is_big() != b.is_big()) {
+            return false;
+        }
+        if (a.is_big()) {
+            if (a.size() != b.size()) {
+                return false;
+            }
+            for (size_t i = 0; i < a.size(); ++i) {
+                if (a[i] != b[i]) return false;
+            }
+            return true;
+        } else {
+            if (a.empty() != b.empty()) return false;
+            return !(!a.empty() && !b.empty() && a.any_obj.small != b.any_obj.small);
+        }
+    }
+
+    friend bool operator<(vector const &a, vector const &b) {
+        if (a.size() != b.size()) {
+            return a.size() < b.size();
+        }
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (a[i] >= b[i]) {
+                return false;
+            }
+        }
+        return !a.empty();
+    }
+
+    friend bool operator<=(vector const &a, vector const &b) {
+        return a < b || a == b;
+    }
+
+    friend bool operator>=(vector const &a, vector const &b) {
+        return !(a < b);
+    }
+
+    friend bool operator>(vector const &a, vector const &b) {
+        return (a >= b) && a != b;
+    }
+
+    friend bool operator!=(vector const &a, vector const &b) {
+        return !(a == b);
+    }
+
+    friend void swap(vector &a, vector &b) {
+        if (a.is_big() && b.is_big()) {
+            buffer *tmp = b.any_obj.big;
+            new(b.any_obj.big) buffer(a.size(), a.any_obj.big->data, a.capacity());
+            b.any_obj.big = a.any_obj.big;
+            a.any_obj.big = tmp;
+            //сделать поэлементное копирование!
+            // swap(a.any_obj.big, b.any_obj.big);
+        } else if (!a.is_big() && !b.is_big()) {
+            T *tmp = new T(b.any_obj.small);
+            b.any_obj.small.~T();
+            new(&b.any_obj.small) T(a.any_obj.small);
+            a.any_obj.small.~T();
+            new(&a.any_obj.small) T(*tmp);
+            delete (tmp);
+        } else if (!a.is_big() && b.is_big()) {
+            buffer *tmp = b.any_obj.big;
+            new(&b.any_obj.big) T(a.any_obj.small);
+            a.any_obj.small.~T();
+            a.any_obj.big = tmp;
+
+        } else {
+            buffer *tmp = a.any_obj.big;
+            new(&a.any_obj.big) T(b.any_obj.small);
+            b.any_obj.small.~T();
+            b.any_obj.big = tmp;
+        }
+        std::swap(a.my_flags, b.my_flags);
     }
 
 private:
@@ -585,72 +699,10 @@ private:
 
         cur() : big(new buffer()) {}
 
-        ~cur() = default;;
+        ~cur() {
+        }
     } any_obj;
 
-    friend bool operator==(vector const &a, vector const &b) {
-        if (a.is_big() != b.is_big()) {
-            return false;
-        }
-        if (a.is_big()) {
-            if (a.size() != b.size()) {
-                return false;
-            }
-            for (size_t i = 0; i < a.size(); ++i) {
-                if (a[i] != b[i]) return false;
-            }
-            return true;
-        } else {
-            if (a.empty() != b.empty()) return false;
-            return !(!a.empty() && !b.empty() && a.any_obj.small != b.any_obj.small);
-        }
-    }
-
-    friend bool operator<(vector const &a, vector const &b) {
-        if (a.size() != b.size()) {
-            return a.size() < b.size();
-        }
-        for (size_t i = 0; i < a.size(); ++i) {
-            if (a[i] >= b[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    friend bool operator<=(vector const &a, vector const &b) {
-        return a < b || a == b;
-    }
-
-    friend bool operator>=(vector const &a, vector const &b) {
-        return !(a < b);
-    }
-
-    friend bool operator>(vector const &a, vector const &b) {
-        return (a >= b) && a != b;
-    }
-
-    friend bool operator!=(vector const &a, vector const &b) {
-        return !(a == b);
-    }
-
-    friend void swap(vector const &a, vector const &b) {
-        if (a.is_big() && b.is_big()) {
-            swap(a.any_obj.big, b.any_obj.big);
-        } else if (!a.is_big() && !b.is_big()) {
-            swap(a.any_obj.small, b.any_obj.small);
-        } else if (!a.is_big() && b.is_big()) {
-            buffer *tmp = b.any_obj.big;
-            new(&b.any_obj.big) T(a.any_obj.small);
-            a.any_obj.small.~T();
-            a.any_obj.big = tmp;
-        } else {
-            buffer *tmp = a.any_obj.big;
-            new(&a.any_obj.big) T(b.any_obj.small);
-            b.any_obj.small.~T();
-            b.any_obj.big = tmp;
-        }
-    }
 
 //fitst bit - empty, second bit - big
     uint8_t my_flags;
