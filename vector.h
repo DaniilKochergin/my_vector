@@ -22,7 +22,7 @@ struct vector {
 private:
     struct buffer {
 
-        buffer() : size(0), capacity(0), ref_count(1), data(nullptr) {};
+        buffer() noexcept : size(0), capacity(0), ref_count(1), data(nullptr) {};
 
         ~buffer() {
             for (size_t i = 0; i < size; ++i) {
@@ -32,9 +32,19 @@ private:
         }
 
         buffer(size_t _size, T *other, size_t cap) {
+            size = 0;
             data = static_cast<T *>(::operator new(cap * sizeof(T)));
             for (size_t i = 0; i < _size; ++i) {
-                new(data + i) T(other[i]);
+                try {
+                    new(data + i) T(other[i]);
+                } catch (...) {
+                    for (size_t j = 0; j < size; ++j) {
+                        data[j].~T();
+                    }
+                    operator delete(data);
+                    throw;
+                }
+                size++;
             }
             // memcpy(data, other, _size*sizeof(T));
         }
@@ -169,13 +179,13 @@ public:
                 delete (any_obj.big);
             }
         } else {
-            //  any_obj.small.~T();
+            if (!empty()) any_obj.small.~T();
         }
     }
 
     vector() noexcept : my_flags(0) {
         set_empty(1);
-        set_big(1);
+        set_big(0);
     }
 
     void clear() {
@@ -185,30 +195,21 @@ public:
                 delete (any_obj.big);
             }
         } else {
-            any_obj.small.~T();
+            if (!empty()) any_obj.small.~T();
         }
         new(&any_obj) cur();
-        set_big(1);
+        set_big(0);
         set_empty(1);
     }
 
     //strong
-    vector(vector const &other) : my_flags(other.my_flags) {
-        if (!is_big()) {
-            new(&any_obj.small) T(other.any_obj.small);
-        } else {
-            any_obj.big = other.any_obj.big;
-            any_obj.big->ref_count++;
-        }
-    }
-
-    //strong
-    vector &operator=(vector const &other) {
-        if (*this == other) {
-            return *this;
+    vector(vector const &other) : my_flags(1) {
+        if (other.empty()) {
+            clear();
+            return;
         }
         if (!is_big() && !other.is_big()) {
-            any_obj.small.~T();
+            if (!empty()) any_obj.small.~T();
             new(&any_obj.small) T(other.any_obj.small);
         } else if (is_big() && other.is_big()) {
             any_obj.big->ref_count--;
@@ -218,7 +219,40 @@ public:
             any_obj.big = other.any_obj.big;
             any_obj.big->ref_count++;
         } else if (!is_big() && other.is_big()) {
-            any_obj.small.~T();
+            if (!empty()) any_obj.small.~T();
+            any_obj.big = other.any_obj.big;
+            any_obj.big->ref_count++;
+        } else if (is_big() && !other.is_big()) {
+            any_obj.big->ref_count--;
+            if (any_obj.big->ref_count == 0) {
+                delete (any_obj.big);
+            }
+            new(&any_obj.small) T(other.any_obj.small);
+        }
+        my_flags = other.my_flags;
+    }
+
+    //strong
+    vector &operator=(vector const &other) {
+        if (*this == other) {
+            return *this;
+        }
+        if (other.empty()) {
+            clear();
+            return *this;
+        }
+        if (!is_big() && !other.is_big()) {
+            if (!empty()) any_obj.small.~T();
+            new(&any_obj.small) T(other.any_obj.small);
+        } else if (is_big() && other.is_big()) {
+            any_obj.big->ref_count--;
+            if (any_obj.big->ref_count == 0) {
+                delete (any_obj.big);
+            }
+            any_obj.big = other.any_obj.big;
+            any_obj.big->ref_count++;
+        } else if (!is_big() && other.is_big()) {
+            if (!empty()) any_obj.small.~T();
             any_obj.big = other.any_obj.big;
             any_obj.big->ref_count++;
         } else {
@@ -242,7 +276,7 @@ public:
         }
     }
 
-    T const &operator[](size_t i) const {
+    T const &operator[](size_t i) const noexcept {
         if (!is_big()) {
             return any_obj.small;
         } else {
@@ -269,28 +303,93 @@ public:
             set_empty(0);
         } else {
             if (!is_big()) {
-                T *tmp = new T(any_obj.small);
-                any_obj.small.~T();
-                any_obj.big = new buffer(5);
-                any_obj.big->size = 2;
-                any_obj.big->ref_count = 1;
-                any_obj.big->capacity = 5;
-                new(any_obj.big->data) T(*tmp);
+                T *tmp;
+                try {
+                    tmp = new T(any_obj.small);
+                } catch (...) {
+                    throw;
+                }
+                T *tmp1;
+                try {
+                    tmp1 = new T(val);
+                } catch (...) {
+                    delete (tmp);
+                    throw;
+                }
+
+                buffer *big_tmp;
+                try {
+                    big_tmp = new buffer(5);
+                } catch (...) {
+                    delete (tmp);
+                    delete (tmp1);
+                    throw;
+                }
+                big_tmp->size = 0;
+                big_tmp->ref_count = 1;
+                big_tmp->capacity = 2;
+                try {
+                    new(big_tmp->data) T(*tmp);
+                } catch (...) {
+                    delete (tmp);
+                    delete (tmp1);
+                    delete (big_tmp);
+                    throw;
+                }
+                big_tmp->size++;
                 //any_obj.big->data[0] = tmp;
-                new(any_obj.big->data + 1) T(val);
+                try {
+                    new(big_tmp->data + 1) T(*tmp1);
+                } catch (...) {
+                    delete (tmp);
+                    delete (tmp1);
+                    delete (big_tmp);
+                    throw;
+                }
+                big_tmp->size++;
+                if (!empty()) any_obj.small.~T();
+                any_obj.big = big_tmp;
                 //any_obj.big->data[1] = val;
                 set_big(1);
                 set_empty(0);
                 delete tmp;
+                delete tmp1;
             } else {
-                T *tmp = new T(val);
-                make_uniq();
-                ensure_capacity();
-                new(any_obj.big->data + size()) T(*tmp);
-                //any_obj.big->data[size()] = val;
-                any_obj.big->size++;
-                set_empty(0);
-                delete (tmp);
+                if (&val >= any_obj.big->data && &val <= any_obj.big->data + size()*sizeof(T)) {
+                    T *tmp;
+                    try {
+                        tmp = new T(val);
+                    } catch (...) {
+                        throw;
+                    }
+                    try {
+                        ensure_capacity();
+                    } catch (...) {
+                        delete tmp;
+                        throw;
+                    }
+                    try {
+                        make_uniq();
+                    } catch (...) {
+                        delete tmp;
+                        throw;
+                    }
+                    try {
+                        new(any_obj.big->data + size()) T(*tmp);
+                    } catch (...) {
+                        delete (tmp);
+                        throw;
+                    }
+                    any_obj.big->size++;
+                    set_empty(0);
+                    delete (tmp);
+                } else {
+                    ensure_capacity();
+                    make_uniq();
+                    new(any_obj.big->data+size()) T(val);
+                    any_obj.big->size++;
+                    set_empty(0);
+                }
             }
         }
     }
@@ -336,9 +435,9 @@ public:
             buffer *tmp = new buffer(cap);
             tmp->size = size();
             tmp->ref_count = 1;
-            new(tmp->data) T(any_obj.small);
+            if (!empty()) new(tmp->data) T(any_obj.small);
             tmp->capacity = cap;
-            any_obj.small.~T();
+            if (!empty()) any_obj.small.~T();
             any_obj.big = tmp;
             set_big(1);
         }
@@ -395,10 +494,10 @@ public:
     void pop_back() {
         if (!is_big()) {
             set_empty(1);
-            any_obj.small.~T();
+            if (!empty()) any_obj.small.~T();
         } else {
             any_obj.big->size--;
-            any_obj.big->data[size()].~T();
+            if (!empty()) any_obj.big->data[size()].~T();
             if (any_obj.big->size == 0) {
                 set_empty(1);
             }
@@ -500,6 +599,7 @@ public:
         if (is_big()) {
             return const_iterator(any_obj.big->data + size());
         } else {
+            if (empty()) return const_iterator(&any_obj.small);
             return const_iterator(&any_obj.small + 1);
         }
     }
@@ -531,6 +631,7 @@ public:
         if (is_big()) {
             return iterator(any_obj.big->data + size());
         } else {
+            if (empty()) return iterator(&any_obj.small);
             return iterator(&any_obj.small + 1);
         }
     }
@@ -582,29 +683,56 @@ public:
     }
 
     friend void swap(vector &a, vector &b) {
+        if (a == b) return;
+        if (a.empty() && b.empty()) {
+            return;
+        } else if (a.empty() && !b.empty()) {
+            if (b.is_big()) {
+                a.any_obj.big = b.any_obj.big;
+                a.any_obj.big->ref_count++;
+
+            } else {
+                new(&a.any_obj.small) T(b.any_obj.small);
+            }
+            a.my_flags = b.my_flags;
+            b.clear();
+            return;
+        } else if (!a.empty() && b.empty()) {
+            if (a.is_big()) {
+                b.any_obj.big = a.any_obj.big;
+                b.any_obj.big->ref_count++;
+            } else {
+                new(&b.any_obj.small) T(a.any_obj.small);
+            }
+            b.my_flags = a.my_flags;
+            a.clear();
+            return;
+        }
         if (a.is_big() && b.is_big()) {
             buffer *tmp = b.any_obj.big;
             b.any_obj.big = a.any_obj.big;
             a.any_obj.big = tmp;
-            //сделать поэлементное копирование!
-            // swap(a.any_obj.big, b.any_obj.big);
         } else if (!a.is_big() && !b.is_big()) {
             T *tmp = new T(b.any_obj.small);
-            b.any_obj.small.~T();
+            if (!b.empty()) b.any_obj.small.~T();
             new(&b.any_obj.small) T(a.any_obj.small);
-            a.any_obj.small.~T();
+            if (!a.empty()) a.any_obj.small.~T();
             new(&a.any_obj.small) T(*tmp);
             delete (tmp);
         } else if (!a.is_big() && b.is_big()) {
             buffer *tmp = b.any_obj.big;
-            new(&b.any_obj.big) T(a.any_obj.small);
-            a.any_obj.small.~T();
+            try {
+                new(&b.any_obj.big) T(a.any_obj.small);
+            } catch (...) {
+                b.any_obj.big = tmp;
+                throw;
+            }
+            if (!a.empty()) a.any_obj.small.~T();
             a.any_obj.big = tmp;
-
         } else {
             buffer *tmp = a.any_obj.big;
             new(&a.any_obj.big) T(b.any_obj.small);
-            b.any_obj.small.~T();
+            if (!b.empty()) b.any_obj.small.~T();
             b.any_obj.big = tmp;
         }
         std::swap(a.my_flags, b.my_flags);
@@ -621,7 +749,6 @@ private:
             tmp->ref_count = 1;
             any_obj.big->ref_count--;
             if (any_obj.big->ref_count == 0) {
-                // any_obj.big->~buffer();
                 delete (any_obj.big);
             }
             any_obj.big = tmp;
@@ -669,7 +796,7 @@ private:
         buffer *big;
         T small;
 
-        cur() : big(new buffer()) {}
+        cur() : big(nullptr) {}
 
         ~cur() {
         }
@@ -677,7 +804,7 @@ private:
 
 
 //fitst bit - empty, second bit - big
-    uint8_t my_flags;
+    uint8_t my_flags{};
 };
 
 
