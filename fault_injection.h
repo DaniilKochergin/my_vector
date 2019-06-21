@@ -22,4 +22,3 @@ struct fault_injection_disable
 private:
     bool was_disabled;
 };
-

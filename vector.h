@@ -304,11 +304,7 @@ public:
         } else {
             if (!is_big()) {
                 T *tmp;
-                try {
-                    tmp = new T(any_obj.small);
-                } catch (...) {
-                    throw;
-                }
+                tmp = new T(any_obj.small);
                 T *tmp1;
                 try {
                     tmp1 = new T(val);
@@ -355,7 +351,7 @@ public:
                 delete tmp;
                 delete tmp1;
             } else {
-                if (&val >= any_obj.big->data && &val <= any_obj.big->data + size()*sizeof(T)) {
+                if (&val >= any_obj.big->data && &val <= any_obj.big->data + size() * sizeof(T)) {
                     T *tmp;
                     try {
                         tmp = new T(val);
@@ -384,9 +380,21 @@ public:
                     set_empty(0);
                     delete (tmp);
                 } else {
-                    ensure_capacity();
-                    make_uniq();
-                    new(any_obj.big->data+size()) T(val);
+                    try {
+                        make_uniq();
+                    } catch (...) {
+                        throw;
+                    }
+                    try {
+                        ensure_capacity();
+                    } catch (...) {
+                        throw;
+                    }
+                    try {
+                        new(any_obj.big->data + size()) T(val);
+                    } catch (...) {
+                        throw;
+                    }
                     any_obj.big->size++;
                     set_empty(0);
                 }
@@ -493,8 +501,8 @@ public:
 
     void pop_back() {
         if (!is_big()) {
-            set_empty(1);
             if (!empty()) any_obj.small.~T();
+            set_empty(1);
         } else {
             any_obj.big->size--;
             if (!empty()) any_obj.big->data[size()].~T();
