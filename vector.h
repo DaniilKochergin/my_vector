@@ -232,39 +232,48 @@ public:
         my_flags = other.my_flags;
     }
 
-    //strong
-    vector &operator=(vector const &other) {
-        if (*this == other) {
-            return *this;
-        }
-        if (other.empty()) {
-            clear();
-            return *this;
-        }
-        if (!is_big() && !other.is_big()) {
-            if (!empty()) any_obj.small.~T();
-            new(&any_obj.small) T(other.any_obj.small);
-        } else if (is_big() && other.is_big()) {
-            any_obj.big->ref_count--;
-            if (any_obj.big->ref_count == 0) {
-                delete (any_obj.big);
-            }
-            any_obj.big = other.any_obj.big;
-            any_obj.big->ref_count++;
-        } else if (!is_big() && other.is_big()) {
-            if (!empty()) any_obj.small.~T();
-            any_obj.big = other.any_obj.big;
-            any_obj.big->ref_count++;
-        } else {
-            any_obj.big->ref_count--;
-            if (any_obj.big->ref_count == 0) {
-                delete (any_obj.big);
-            }
-            new(&any_obj.small) T(other.any_obj.small);
-        }
-        my_flags = other.my_flags;
+    vector &operator=(vector other) {
+        swap(*this, other);
         return *this;
     }
+//    //strong
+//    vector &operator=(vector const &other) {
+//        if (*this == other) {
+//            return *this;
+//        }
+//        if (other.empty()) {
+//            clear();
+//            return *this;
+//        }
+//        if (!is_big() && !other.is_big()) {
+//            if (!empty()) any_obj.small.~T();
+//            new(&any_obj.small) T(other.any_obj.small);
+//        } else if (is_big() && other.is_big()) {
+//            any_obj.big->ref_count--;
+//            if (any_obj.big->ref_count == 0) {
+//                delete (any_obj.big);
+//            }
+//            any_obj.big = other.any_obj.big;
+//            any_obj.big->ref_count++;
+//        } else if (!is_big() && other.is_big()) {
+//            if (!empty()) any_obj.small.~T();
+//            any_obj.big = other.any_obj.big;
+//            any_obj.big->ref_count++;
+//        } else {
+//            buffer *tmp = any_obj.big;
+//            try {
+//                new(&any_obj.small) T(other.any_obj.small);
+//            } catch (...) {
+//                any_obj.big = tmp;
+//            }
+//            tmp->ref_count--;
+//            if (tmp->ref_count == 0) {
+//                delete (tmp);
+//            }
+//        }
+//        my_flags = other.my_flags;
+//        return *this;
+//    }
 
     //strong
     T &operator[](size_t i) {
@@ -358,14 +367,9 @@ public:
                     } catch (...) {
                         throw;
                     }
+                    make_uniq();
                     try {
                         ensure_capacity();
-                    } catch (...) {
-                        delete tmp;
-                        throw;
-                    }
-                    try {
-                        make_uniq();
                     } catch (...) {
                         delete tmp;
                         throw;
@@ -504,6 +508,7 @@ public:
             if (!empty()) any_obj.small.~T();
             set_empty(1);
         } else {
+            make_uniq();
             any_obj.big->size--;
             if (!empty()) any_obj.big->data[size()].~T();
             if (any_obj.big->size == 0) {
@@ -549,6 +554,7 @@ public:
 
     iterator insert(const_iterator pos, T const &val) {
         vector tmp;
+        tmp.reserve(capacity());
         const_iterator it = begin();
         for (; it != pos; ++it) {
             tmp.push_back(*it);
@@ -565,6 +571,7 @@ public:
 
     iterator erase(const_iterator pos) {
         vector tmp;
+        tmp.reserve(capacity());
         const_iterator it = begin();
         for (; it != pos; ++it) {
             tmp.push_back(*it);
@@ -572,7 +579,7 @@ public:
         if (it != end()) {
             ++it;
         }
-        iterator it3 = tmp.end();
+        auto it3 = tmp.end();
         for (; it != end(); ++it) {
             tmp.push_back(*it);
         }
@@ -621,14 +628,17 @@ public:
     }
 
     reverse_iterator rbegin() noexcept {
+        make_uniq();
         return reverse_iterator(end());
     }
 
     reverse_iterator rend() noexcept {
+        make_uniq();
         return reverse_iterator(begin());
     }
 
     iterator begin() noexcept {
+        make_uniq();
         if (is_big()) return iterator(any_obj.big->data);
         else {
             return iterator(&any_obj.small);
@@ -636,6 +646,7 @@ public:
     }
 
     iterator end() noexcept {
+        make_uniq();
         if (is_big()) {
             return iterator(any_obj.big->data + size());
         } else {
@@ -774,11 +785,19 @@ private:
         if (is_uniq()) {
             return;
         }
-        buffer *tmp = new buffer(size(), any_obj.big->data, size() * 2);
+        buffer *tmp;
+        try{
+           tmp = new buffer(size(), any_obj.big->data, size() * 2);
+        } catch (...){
+            throw;
+        }
         tmp->capacity = size() * 2;
         tmp->size = size();
         tmp->ref_count = 1;
         any_obj.big->ref_count--;
+        if (any_obj.big->ref_count == 0) {
+            delete (any_obj.big);
+        }
         any_obj.big = tmp;
     }
 
